@@ -76,10 +76,10 @@ public class DriverControlOpMode extends LinearOpMode {
             double speed = -gamepad1.left_stick_x;
             double turn = gamepad1.left_stick_y;
 
-            double right = speed - turn;
-            double left = speed + turn;
-            right_drive.setPower(right * 1);
-            left_drive.setPower(left * 1);
+            double right = speed + turn;
+            double left = speed - turn;
+            right_drive.setPower(right * 0.8);
+            left_drive.setPower(left * 0.8);
 
         }
 
