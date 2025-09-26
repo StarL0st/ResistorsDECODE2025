@@ -2,11 +2,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "DriverControlOpMode", group = "Sky Madness Reto Blu")
+@TeleOp(name = "DriverControlOpMode", group = "DECODE Resistors 2025")
 public class DriverControlOpMode extends LinearOpMode {
 
     private DcMotor right_drive;
@@ -15,10 +16,11 @@ public class DriverControlOpMode extends LinearOpMode {
 
     private DcMotor launcher_starter;
 
-    private Servo launcher_servo;
+    private CRServo launcher_servo;
 
     private boolean launcherMotorToggle = false;
     private boolean launcherStarterToggle = false;
+    private boolean launcherServoToggle = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -29,7 +31,7 @@ public class DriverControlOpMode extends LinearOpMode {
 
         launcher_starter = hardwareMap.get(DcMotor.class, "launcher_starter");
 
-        launcher_servo = hardwareMap.get(Servo.class, "launcher_servo");
+        launcher_servo = hardwareMap.get(CRServo.class, "launcher_servo");
 
         left_drive.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -71,6 +73,22 @@ public class DriverControlOpMode extends LinearOpMode {
                     sleep(300);
                 }
             }
+
+            if(gamepad1.x) {
+                launcherServoToggle = !launcherServoToggle;
+                telemetry.addData("Launcher Servo Status: ", launcherServoToggle);
+                telemetry.update();
+                sleep(300);
+                if(launcherServoToggle) {
+                    launcher_servo.setPower(4);
+                    sleep(300);
+                } else {
+                    launcher_servo.setPower(0);
+                    sleep(300);
+                }
+            }
+
+
 
 
             double speed = -gamepad1.left_stick_x;
