@@ -18,6 +18,8 @@ public class DriverControlOpMode extends LinearOpMode {
 
     private CRServo launcher_servo;
 
+    private boolean Fastmode= true;
+
     private boolean launcherMotorToggle = false;
     private boolean launcherStarterToggle = false;
     private boolean launcherServoToggle = false;
@@ -45,14 +47,14 @@ public class DriverControlOpMode extends LinearOpMode {
             telemetry.update();
 
             //launcher toggle
-            if(gamepad1.a) {
+            if(gamepad2.a) {
                 launcherMotorToggle = !launcherMotorToggle;
                 telemetry.addData("Launcher Motor Status: ", launcherMotorToggle);
                 telemetry.update();
                 sleep(200);
 
                 if(launcherMotorToggle) {
-                    launcher_motor.setPower(0.5);
+                    launcher_motor.setPower(0.7);
                     sleep(200);
                 } else {
                     launcher_motor.setPower(0);
@@ -60,7 +62,7 @@ public class DriverControlOpMode extends LinearOpMode {
                 }
             }
 
-            if(gamepad1.b) {
+            if(gamepad2.b){
                 launcherStarterToggle = !launcherStarterToggle;
                 telemetry.addData("Launcher Starter Status: ", launcherStarterToggle);
                 telemetry.update();
@@ -74,15 +76,15 @@ public class DriverControlOpMode extends LinearOpMode {
                 }
             }
 
-            if(gamepad1.x) {
+            if(gamepad2.right_bumper) {
                 launcherServoToggle = !launcherServoToggle;
                 telemetry.addData("Launcher Servo Status: ", launcherServoToggle);
                 telemetry.update();
                 sleep(300);
                 if(launcherServoToggle) {
-                    launcher_servo.setPower(4);
+                    launcher_servo.setPower(10);
                     sleep(300);
-                } else {
+                } else{
                     launcher_servo.setPower(0);
                     sleep(300);
                 }
@@ -91,13 +93,26 @@ public class DriverControlOpMode extends LinearOpMode {
 
 
 
-            double speed = -gamepad1.left_stick_x;
+            double speed = -gamepad1.right_stick_x;
             double turn = gamepad1.left_stick_y;
 
-            double right = speed + turn;
-            double left = speed - turn;
-            right_drive.setPower(right * 0.8);
-            left_drive.setPower(left * 0.8);
+            double right = speed - turn;
+            double left = speed + turn;
+
+             if (gamepad1.right_bumper) {
+                Fastmode = true;
+            }
+             if (gamepad1.left_bumper) {
+                 Fastmode= false;
+             }
+
+            if(Fastmode){
+                right_drive.setPower(right*1);
+                left_drive.setPower(left*1);
+            } else {
+                right_drive.setPower(right*0.65);
+                left_drive.setPower( left*0.65);
+            }
 
         }
 
