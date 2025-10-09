@@ -20,6 +20,7 @@ public class DriverControlOpMode extends LinearOpMode {
 
     private boolean Fastmode= true;
 
+
     private boolean launcherMotorToggle = false;
     private boolean launcherStarterToggle = false;
     private boolean launcherServoToggle = false;
@@ -28,6 +29,7 @@ public class DriverControlOpMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         right_drive = hardwareMap.get(DcMotor.class, "right_drive");
         left_drive = hardwareMap.get(DcMotor.class, "left_drive");
+
         launcher_motor = hardwareMap.get(DcMotor.class, "launcher_motor");
         launcher_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
@@ -35,7 +37,7 @@ public class DriverControlOpMode extends LinearOpMode {
 
         launcher_servo = hardwareMap.get(CRServo.class, "launcher_servo");
 
-        left_drive.setDirection(DcMotorSimple.Direction.REVERSE);
+        left_drive.setDirection(DcMotorSimple.Direction.FORWARD);
 
         telemetry.addData("Gripper Status", "Initialized");
         telemetry.addData("Status", "Initialized");
@@ -54,7 +56,7 @@ public class DriverControlOpMode extends LinearOpMode {
                 sleep(200);
 
                 if(launcherMotorToggle) {
-                    launcher_motor.setPower(0.7);
+                    launcher_motor.setPower(0.6);
                     sleep(200);
                 } else {
                     launcher_motor.setPower(0);
@@ -82,7 +84,7 @@ public class DriverControlOpMode extends LinearOpMode {
                 telemetry.update();
                 sleep(300);
                 if(launcherServoToggle) {
-                    launcher_servo.setPower(10);
+                    launcher_servo.setPower(8);
                     sleep(300);
                 } else{
                     launcher_servo.setPower(0);
@@ -110,8 +112,8 @@ public class DriverControlOpMode extends LinearOpMode {
                 right_drive.setPower(right*1);
                 left_drive.setPower(left*1);
             } else {
-                right_drive.setPower(right*0.65);
-                left_drive.setPower( left*0.65);
+                right_drive.setPower(right*0.50);
+                left_drive.setPower( left*0.50);
             }
 
         }
