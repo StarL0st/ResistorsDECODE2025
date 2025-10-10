@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -20,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "DECODEResistorsPathRecording", group = "DECODE Resistors 2025")
@@ -27,8 +29,22 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
     private DcMotor right_drive;
     private DcMotor left_drive;
 
+    private DcMotor launcher_motor;
+
+    private DcMotor launcher_starter;
+
+    private CRServo launcher_servo;
+
+    private boolean FastMode = true;
+
+
+    private boolean launcherMotorToggle = false;
+    private boolean launcherStarterToggle = false;
+    private boolean launcherServoToggle = false;
+
     private Pose2D initialPose;
     private Pose2D currentPose;
+    private Pose2D lastPose;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -46,10 +62,13 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
     private double recordingInterval = 1; //SECONDS
     private double lastRecordedTime;
     private boolean recordingActive = false;
+    private boolean endedRecording = false;
 
     private List<Pose2D> path = new ArrayList<>();
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -79,38 +98,120 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
         waitForStart();
         runtime.reset();
         while(opModeIsActive()) {
-            if(gamepad1.a) {
-                recordingActive = !recordingActive;
+            this.lastPose = this.currentPose;
+            //TODO: Add IMU Heading;
+            this.currentPose = new Pose2D(DistanceUnit.MM, left_drive.getCurrentPosition(), right_drive.getCurrentPosition(), AngleUnit.DEGREES, 0);
+            if(gamepad1.x) {
+                sleep(200);
+                if(recordingActive) {
+                    endedRecording = true;
+                    recordingActive = false;
+                    continue;
+                }
+                recordingActive = true;
                 telemetry.addData("Status", "Starting Recording");
+                telemetry.update();
+                sleep(200);
             }
             if(recordingActive) {
-                if(recordingInterval >= (runtime.now(TimeUnit.SECONDS) - lastRecordedTime)) {
-                    //TODO: Add IMU Heading;
-                    this.currentPose = new Pose2D(DistanceUnit.MM, left_drive.getCurrentPosition(), right_drive.getCurrentPosition(), AngleUnit.DEGREES, 0);
-                    File dir = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test");
-                    if (!dir.exists()) dir.mkdirs();
+                if((runtime.now(TimeUnit.SECONDS) - lastRecordedTime) >= recordingInterval) {
+                    double dx = Math.abs(this.currentPose.getX(DistanceUnit.MM) - this.lastPose.getX(DistanceUnit.MM));
+                    double dy = Math.abs(this.currentPose.getY(DistanceUnit.MM) - this.lastPose.getY(DistanceUnit.MM));
 
-                    String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-                    File file = new File(dir, "encoder_log_" + timestamp + ".json");
-                    try(FileWriter writer = new FileWriter(file, true)) {
-                        writer.write((int) this.currentPose.getX(DistanceUnit.MM) + "," + (int) this.currentPose.getY(DistanceUnit.MM) + "\n");
-                        //TODO: GSON STORAGE
-                    } catch (Exception e) {
-                        telemetry.addData("File Error", e.getMessage());
+                    if (dx > 1.0 || dy > 1.0) {
+                        updatePath(this.currentPose);
+                        this.lastPose = this.currentPose;
                     }
-                    updatePath(this.currentPose);
+                    telemetry.addData("Recording", "Added path data");
+                    telemetry.update();
+                    lastRecordedTime = runtime.now(TimeUnit.SECONDS);
                 }
 
+            } else if(endedRecording) {
+                sleep(200);
+                telemetry.addData("Status", "Ending Recording");
+                telemetry.update();
+                File dir = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test");
+                if (!dir.exists()) dir.mkdirs();
+
+                String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+                File file = new File(dir, "encoder_log_" + timestamp + ".json");
+
+                SessionData sessionData = new SessionData(timestamp, "autonomous", this.path);
+
+                try(FileWriter writer = new FileWriter(file, false)) {
+                    GSON.toJson(sessionData, writer);
+                } catch (Exception e) {
+                    telemetry.addData("File Error", e.getMessage());
+                }
+                endedRecording = false;
             }
-            double speed = -gamepad1.left_stick_x;
-            double turn = gamepad1.left_stick_y;
+
+            if(gamepad2.a) {
+                launcherMotorToggle = !launcherMotorToggle;
+                telemetry.addData("Launcher Motor Status: ", launcherMotorToggle);
+                telemetry.update();
+                sleep(200);
+
+                if(launcherMotorToggle) {
+                    launcher_motor.setPower(0.6);
+                    sleep(200);
+                } else {
+                    launcher_motor.setPower(0);
+                    sleep(200);
+                }
+            }
+
+            if(gamepad2.b){
+                launcherStarterToggle = !launcherStarterToggle;
+                telemetry.addData("Launcher Starter Status: ", launcherStarterToggle);
+                telemetry.update();
+                sleep(300);
+                if(launcherStarterToggle) {
+                    launcher_starter.setPower(1);
+                    sleep(300);
+                } else {
+                    launcher_starter.setPower(0);
+                    sleep(300);
+                }
+            }
+
+            if(gamepad2.right_bumper) {
+                launcherServoToggle = !launcherServoToggle;
+                telemetry.addData("Launcher Servo Status: ", launcherServoToggle);
+                telemetry.update();
+                sleep(300);
+                if(launcherServoToggle) {
+                    launcher_servo.setPower(8);
+                    sleep(300);
+                } else{
+                    launcher_servo.setPower(0);
+                    sleep(300);
+                }
+            }
+
+            double speed = gamepad1.left_stick_y;
+            double turn = -gamepad1.right_stick_x;
 
             double right = speed - turn;
             double left = speed + turn;
-            right_drive.setPower(right * 0.7);
-            left_drive.setPower(left * 0.7);
+
+            if (gamepad1.right_bumper) {
+                FastMode = true;
+            }
+            if (gamepad1.left_bumper) {
+                FastMode = false;
+            }
+
+            if(FastMode){
+                right_drive.setPower(right*1);
+                left_drive.setPower(left*1);
+            } else {
+                right_drive.setPower(right*0.50);
+                left_drive.setPower( left*0.50);
+            }
             //update current pose
-            //telemetry.addData("Currently at",  " at %7d :%7d", currentPose.getX(DistanceUnit.MM), currentPose.getY(DistanceUnit.MM));
+            telemetry.addData("Currently at",  " at %7d :%7d", (int) this.currentPose.getX(DistanceUnit.MM), (int) currentPose.getY(DistanceUnit.MM));
             telemetry.update();
         }
     }

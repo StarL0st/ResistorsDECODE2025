@@ -59,20 +59,16 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
 
         //load path
 
-
-        waitForStart();
-        telemetry.update();
-        /*
         waitForStart();
         runtime.reset();
         telemetry.update();
-        if(opModeIsActive()) {
+        while(opModeIsActive()) {
 
 
             telemetry.update();
         }
         telemetry.update();
-         */
+
 
         encoderDrive(DRIVE_SPEED, 400, 400, 2.0);
         encoderDrive(TURN_SPEED, -300, 300, 2.0);
@@ -81,6 +77,10 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);
+    }
+
+    public void loadPath() {
+
     }
 
     public void encoderDrive(double speed,
@@ -107,12 +107,6 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
             left_drive.setPower(Math.abs(speed));
             right_drive.setPower(Math.abs(speed));
 
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
                     (left_drive.isBusy() && right_drive.isBusy())) {
