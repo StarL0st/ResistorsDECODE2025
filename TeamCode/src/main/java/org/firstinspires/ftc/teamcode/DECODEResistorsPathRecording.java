@@ -16,7 +16,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,10 +61,15 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
     static final double     TURN_SPEED              = 0.5;
 
     //recording data
-    private double recordingInterval = 1; //SECONDS
+    private final static double recordingInterval = 0.5; //SECONDS
     private double lastRecordedTime;
     private boolean recordingActive = false;
     private boolean endedRecording = false;
+
+    //config
+    private static final File CONFIG_FILE = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test/config.json");
+
+    private ConfigData config;
 
     private List<Pose2D> path = new ArrayList<>();
 
@@ -86,12 +93,11 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
 
         telemetry.addData("Status", "Ready to record");
 
+        loadConfig();
+
         initialPose = new Pose2D(DistanceUnit.MM, 0, 0, AngleUnit.DEGREES, 0);
         this.currentPose = initialPose;
         updatePath(this.initialPose);
-
-
-
 
         //interval recording
         telemetry.update();
@@ -100,7 +106,7 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
         while(opModeIsActive()) {
             this.lastPose = this.currentPose;
             //TODO: Add IMU Heading;
-            this.currentPose = new Pose2D(DistanceUnit.MM, left_drive.getCurrentPosition(), right_drive.getCurrentPosition(), AngleUnit.DEGREES, 0);
+            this.currentPose = new Pose2D(DistanceUnit.MM, (left_drive.getCurrentPosition() * COUNTS_PER_MM), (right_drive.getCurrentPosition() * COUNTS_PER_MM), AngleUnit.DEGREES, 0);
             if(gamepad1.x) {
                 sleep(200);
                 if(recordingActive) {
@@ -118,15 +124,16 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
                     double dx = Math.abs(this.currentPose.getX(DistanceUnit.MM) - this.lastPose.getX(DistanceUnit.MM));
                     double dy = Math.abs(this.currentPose.getY(DistanceUnit.MM) - this.lastPose.getY(DistanceUnit.MM));
 
+                    updatePath(this.currentPose);
+                    this.lastPose = this.currentPose;
+
                     if (dx > 1.0 || dy > 1.0) {
-                        updatePath(this.currentPose);
-                        this.lastPose = this.currentPose;
+
                     }
                     telemetry.addData("Recording", "Added path data");
                     telemetry.update();
                     lastRecordedTime = runtime.now(TimeUnit.SECONDS);
                 }
-
             } else if(endedRecording) {
                 sleep(200);
                 telemetry.addData("Status", "Ending Recording");
@@ -144,6 +151,7 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
                 } catch (Exception e) {
                     telemetry.addData("File Error", e.getMessage());
                 }
+                askToSetDefaultPath(file.getName());
                 endedRecording = false;
             }
 
@@ -218,6 +226,69 @@ public class DECODEResistorsPathRecording extends LinearOpMode {
 
     public void updatePath(Pose2D pose2D) {
         path.add(pose2D);
+    }
+
+    private void loadConfig() {
+        try (FileReader reader = new FileReader(CONFIG_FILE)) {
+            config = GSON.fromJson(reader, ConfigData.class);
+            File dir = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test");
+            File pathFile = new File(dir, config.selectedPath);
+            if (!pathFile.exists()) {
+                telemetry.addLine("⚠️ Saved path missing — resetting to default.");
+                config = new ConfigData("encoder_log_default.json");
+                saveConfig(config);
+            }
+            telemetry.addData("Config", "Loaded: " + config.selectedPath);
+        } catch (Exception e) {
+            telemetry.addData("Config", "Error loading: " + e.getMessage());
+            // Default config if missing
+            config = new ConfigData("encoder_log_default.json");
+            saveConfig(config); // auto-create it
+        }
+    }
+
+    private void saveConfig(ConfigData data) {
+        try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
+            GSON.toJson(data, writer);
+            sleep(200);
+        } catch (Exception e) {
+            telemetry.addData("Config", "Save error: " + e.getMessage());
+        }
+    }
+
+    private void askToSetDefaultPath(String fileName) {
+        boolean aPressed = false;
+        boolean bPressed = false;
+
+        telemetry.clearAll();
+        telemetry.addLine("Recording complete!");
+        telemetry.addLine("Set this as default path?");
+        telemetry.addLine("Press A = Yes, B = No");
+        telemetry.update();
+
+        while (opModeIsActive()) {
+            if (gamepad1.a && !aPressed) {
+                saveConfig(new ConfigData(fileName));
+                sleep(500);
+                telemetry.clearAll();
+                telemetry.addLine("✅ Saved as default path:");
+                telemetry.addLine(fileName);
+                telemetry.update();
+                sleep(1000);
+                break;
+            } else if (gamepad1.b && !bPressed) {
+                telemetry.clearAll();
+                telemetry.addLine("❌ Skipped setting default path");
+                telemetry.update();
+                sleep(1000);
+                break;
+            }
+
+            aPressed = gamepad1.a;
+            bPressed = gamepad1.b;
+
+            sleep(100);
+        }
     }
 }
 

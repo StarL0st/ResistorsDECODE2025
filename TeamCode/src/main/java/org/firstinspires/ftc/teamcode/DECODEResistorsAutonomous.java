@@ -1,10 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.os.Environment;
+
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -12,6 +16,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Autonomous
@@ -33,7 +42,15 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
     static final double     DRIVE_SPEED             = 1;
     static final double     TURN_SPEED              = 0.7;
 
-    private Pose2D[] path = new Pose2D[]{};
+    private static final File CONFIG_FILE = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test/config.json");
+
+    private ConfigData config;
+
+    private List<Pose2D> path = new ArrayList<>();
+
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -46,6 +63,9 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
         right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        right_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         right_drive.setDirection(DcMotorSimple.Direction.FORWARD);
         left_drive.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -55,14 +75,30 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
                 left_drive.getCurrentPosition(),
                 right_drive.getCurrentPosition());
 
-        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Status", "Initialized controls");
+
+        //config
+        loadConfig();
 
         //load path
+        loadPath();
+
+        telemetry.update();
+
+
 
         waitForStart();
         runtime.reset();
         telemetry.update();
         while(opModeIsActive()) {
+            sleep(500);
+            telemetry.addData("Path", "Starting to replay path: " + config.selectedPath);
+            telemetry.update();
+            //path replay
+            for(Pose2D pose : this.path) {
+                encoderDrive(1, -pose.getX(DistanceUnit.MM), -pose.getY(DistanceUnit.MM), 15.0);
+                sleep(400);
+            }
 
 
             telemetry.update();
@@ -70,17 +106,26 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
         telemetry.update();
 
 
-        encoderDrive(DRIVE_SPEED, 400, 400, 2.0);
-        encoderDrive(TURN_SPEED, -300, 300, 2.0);
-        encoderDrive(DRIVE_SPEED, 700, 700, 2.0);
-        encoderDrive(TURN_SPEED, 300, -300, 1.7);
+        //encoderDrive(DRIVE_SPEED, 400, 400, 2.0);
+        //encoderDrive(TURN_SPEED, -300, 300, 2.0);
+        //encoderDrive(DRIVE_SPEED, 700, 700, 2.0);
+        //encoderDrive(TURN_SPEED, 300, -300, 1.7);
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);
     }
 
     public void loadPath() {
+        File dir = new File(Environment.getExternalStorageDirectory(), "FIRST/encoder_data_test");
+        File pathFile = new File(dir, config.selectedPath);
 
+        try (FileReader reader = new FileReader(pathFile)) {
+            SessionData session = GSON.fromJson(reader, SessionData.class);
+            path = session.path;
+            telemetry.addData("Path", "Loaded " + path.size() + " poses");
+        } catch (Exception e) {
+            telemetry.addData("Path", "Error loading: " + e.getMessage());
+        }
     }
 
     public void encoderDrive(double speed,
@@ -93,8 +138,8 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = left_drive.getCurrentPosition() + (int)(leftMM * COUNTS_PER_MM);
-            newRightTarget = right_drive.getCurrentPosition() + (int)(rightMM * COUNTS_PER_MM);
+            newLeftTarget = (int) leftMM;
+            newRightTarget = (int) rightMM;
             left_drive.setTargetPosition(newLeftTarget);
             right_drive.setTargetPosition(newRightTarget);
 
@@ -127,6 +172,28 @@ public class DECODEResistorsAutonomous extends LinearOpMode {
             right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             sleep(250);   // optional pause after each move.
+        }
+    }
+
+    //TODO: UX and UI details, better path selection and similar
+
+    private void loadConfig() {
+        try (FileReader reader = new FileReader(CONFIG_FILE)) {
+            config = GSON.fromJson(reader, ConfigData.class);
+            telemetry.addData("Config", "Loaded: " + config.selectedPath);
+        } catch (Exception e) {
+            telemetry.addData("Config", "Error loading: " + e.getMessage());
+            // Default config if missing
+            config = new ConfigData("encoder_log_default.json");
+            saveConfig(); // auto-create it
+        }
+    }
+
+    private void saveConfig() {
+        try (FileWriter writer = new FileWriter(CONFIG_FILE, false)) {
+            GSON.toJson(config, writer);
+        } catch (Exception e) {
+            telemetry.addData("Config", "Save error: " + e.getMessage());
         }
     }
 }
