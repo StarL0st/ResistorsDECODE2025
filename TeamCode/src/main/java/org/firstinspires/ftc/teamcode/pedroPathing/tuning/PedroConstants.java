@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing;
+package org.firstinspires.ftc.teamcode.pedroPathing.tuning;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
@@ -10,10 +10,10 @@ import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class Constants {
+public class PedroConstants {
 
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(5.1); //TODO: Weigh actual robot
+            .mass(6.4); //TODO: Weigh actual robot
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
@@ -31,12 +31,15 @@ public class Constants {
             .rightRearMotorName("rightBackDrive")
             .leftFrontMotorName("leftFrontDrive")
             .leftRearMotorName("leftBackDrive")
-            .leftFrontEncoderDirection(Encoder.FORWARD)
-            .leftRearEncoderDirection(Encoder.FORWARD)
+            .leftFrontEncoderDirection(Encoder.REVERSE)
+            .leftRearEncoderDirection(Encoder.REVERSE)
             .rightFrontEncoderDirection(Encoder.FORWARD)
             .rightRearEncoderDirection(Encoder.FORWARD)
-            .robotLength(18) //TODO: Adjust actual wheelbase length & width
-            .robotWidth(18);
+            .robotLength(12)
+            .robotWidth(15)
+            .forwardTicksToInches(0.004444219132961859)
+            .strafeTicksToInches(-0.005936374811684521)
+            .turnTicksToInches(0.01578625560468502);
 
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);

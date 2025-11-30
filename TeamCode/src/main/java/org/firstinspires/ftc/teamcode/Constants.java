@@ -6,5 +6,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 public class Constants {
 
-    public static Pose2D ALLIANCE_POSE2D = new Pose2D(DistanceUnit.MM, 0, 0, AngleUnit.DEGREES, 0);
+    public static Pose2D START_FAR_SIDE = new Pose2D(DistanceUnit.MM, 0, 0, AngleUnit.DEGREES, 0);
+    public static Pose2D START_CLOSE_SIDE = new Pose2D(DistanceUnit.MM, 0, 0, AngleUnit.DEGREES, 0);
+
+    public enum AUTO_START_POS {
+        FAR_SIDE,
+        CLOSE_SIDE
+    }
 }

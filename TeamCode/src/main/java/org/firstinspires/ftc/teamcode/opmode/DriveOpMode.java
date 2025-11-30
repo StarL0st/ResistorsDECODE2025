@@ -9,7 +9,7 @@ import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import org.firstinspires.ftc.teamcode.command.DriveCommand;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDriveSubsystem;
 
-@TeleOp(name = "DriveOpMode", group = "DECODE Resistors 2025")
+@TeleOp(name = "DriveOpMode", group = "TeleOp")
 public class DriveOpMode extends CommandOpMode {
 
     private GamepadEx driverOp;
@@ -22,15 +22,10 @@ public class DriveOpMode extends CommandOpMode {
     @Override
     public void initialize() {
         this.driverOp = new GamepadEx(gamepad1);
-        RevIMU imu = new RevIMU(hardwareMap);
 
         this.mecanumDrive = new MecanumDriveSubsystem(
-                new Motor(hardwareMap, "leftFrontDrive"),
-                new Motor(hardwareMap, "rightFrontDrive"),
-                new Motor(hardwareMap, "leftBackDrive"),
-                new Motor(hardwareMap, "rightBackDrive"),
-                this.driverOp,
-                imu
+                hardwareMap,
+                telemetry
         );
 
         this.driveCommand = new DriveCommand(mecanumDrive,
@@ -39,19 +34,6 @@ public class DriveOpMode extends CommandOpMode {
                 driverOp::getRightX);
         register(this.mecanumDrive);
         this.mecanumDrive.setDefaultCommand(this.driveCommand);
-    }
-
-    @Override
-    public void runOpMode() throws InterruptedException {
-        super.runOpMode();
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-
-        waitForStart();
-        while(opModeIsActive()) {
-            telemetry.addData("Status", "Running");
-            telemetry.update();
-        }
     }
 
 }
