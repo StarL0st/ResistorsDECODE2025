@@ -1,18 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 
 public class RobotState {
-    private GamepadEx driver;
+    public static final RobotState INSTANCE = new RobotState();
 
-    private final RobotState instance;
-
-    public RobotState(RobotState instance) {
-        this.instance = instance;
+    public RobotState() {
 
     }
 
-    public RobotState getInstance() {
-        return instance;
+    public void init() {
+
     }
+
+
+
 }
