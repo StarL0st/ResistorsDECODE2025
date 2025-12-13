@@ -41,7 +41,6 @@ public class SorterSubsystem extends SubsystemBase {
 
     public void logEncoderPos() {
         this.telemetry.addData("Encoder Pos", this.sorterSpindexerMotor.getCurrentPosition());
-        this.telemetry.update();
     }
 
     @Override

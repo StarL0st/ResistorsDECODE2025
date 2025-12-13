@@ -31,15 +31,15 @@ public class PedroConstants {
             .rightRearMotorName("rightBackDrive")
             .leftFrontMotorName("leftFrontDrive")
             .leftRearMotorName("leftBackDrive")
-            .leftFrontEncoderDirection(Encoder.REVERSE)
-            .leftRearEncoderDirection(Encoder.REVERSE)
+            .leftFrontEncoderDirection(Encoder.FORWARD)
+            .leftRearEncoderDirection(Encoder.FORWARD)
             .rightFrontEncoderDirection(Encoder.FORWARD)
             .rightRearEncoderDirection(Encoder.FORWARD)
             .robotLength(12)
             .robotWidth(15)
-            .forwardTicksToInches(0.004444219132961859)
-            .strafeTicksToInches(-0.005936374811684521)
-            .turnTicksToInches(0.01578625560468502);
+            .forwardTicksToInches(0.7217106537819458)
+            .strafeTicksToInches(0.008408371076238483)
+            .turnTicksToInches(0.0016121389690278672);
 
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
